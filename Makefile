@@ -4,7 +4,7 @@ CC = gcc
 CFLAGS = -std=c11 -Wall -Wextra -O2 -I.
 ZCC = zcc
 
-.PHONY: all host zx clean
+.PHONY: all host zx tap clean
 
 all: host
 
@@ -13,8 +13,13 @@ host: demo/main.c platform/zx_platform.c platform/zx_platform.h
 
 zx: demo/main.c platform/zx_platform.c platform/zx_platform.h
 	@echo "Building for ZX with z88dk..."
-	$(ZCC) +zx -vn -m -create-app demo/main.c platform/zx_platform.c -o knightlore
-	@echo "Build complete. Output: knightlore.z80 (or nearby z88dk output files)"
+	$(ZCC) +zx -vn -create-app -o knightlore demo/main.c platform/zx_platform.c
+	@echo "Build complete. Output may include .tap/.z80/.bin depending on z88dk setup"
+
+tap: demo/main.c platform/zx_platform.c platform/zx_platform.h
+	@echo "Building TAP output for ZX Spectrum..."
+	$(ZCC) +zx -vn -create-app -o knightlore demo/main.c platform/zx_platform.c
+	@echo "Build complete. Check for .tap output in the current directory"
 
 clean:
-	rm -f knightlore-demo knightlore knightlore.z80 knightlore.rom
+	rm -f knightlore-demo knightlore knightlore.tap knightlore.bin knightlore.z80
