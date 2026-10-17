@@ -11,7 +11,7 @@ What I added
   - zx_keypressed has a host implementation using non-blocking stdin (termios + select).
   - non-HOST zx_keypressed uses a simple z88dk inp(0xFE) check to detect "any key".
 - demo/main.c: simple demo that draws a few tiles and waits for a keypress.
-- Makefile: builds a host demo (target `host`) as `knightlore-demo` and a z88dk target `zx`.
+- Makefile: builds a host demo (target `host`) as `knightlore-demo` and a z88dk target `zx` without the unsupported `-clib=sdcc_iy` flag.
 
 Build and run (host):
 
@@ -20,12 +20,10 @@ Build and run (host):
 
 Build for ZX using z88dk:
 
-  # install z88dk (https://github.com/z88dk/z88dk) and ensure `zcc` is on PATH
   make zx
 
-This will run zcc for the +zx target and create a `knightlore.z80` snapshot or other
-outputs depending on your z88dk setup. You can also customize zcc flags in the Makefile.
+This uses the default z88dk library available in your installation. If you want a specific Spectrum output format such as .tap or .sna, I can add the exact command needed.
 
 Notes
 - The HOST path is intended for native development and testing. For building for an actual ZX Spectrum toolchain, the code now provides a basic keypress detector using inp(0xFE). For a full keyboard matrix scan and proper input mapping, we should implement row-by-row scanning and key mapping.
-- If you want a different z88dk commandline (e.g. create a .tap or .sna), tell me the desired target and I'll add it to the Makefile.
+- The `-clib=sdcc_iy` flag was removed because it causes failure in builds where that runtime variant is unavailable.
