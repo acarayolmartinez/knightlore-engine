@@ -22,6 +22,7 @@ int main(void) {
     zx_blit_tile(50, 20, demo_tile);
     zx_blit_tile(120, 40, demo_tile);
 
+#ifdef HOST
     printf("Demo: press any key to exit.\n");
 
     while (!zx_keypressed()) {
@@ -29,5 +30,12 @@ int main(void) {
     }
 
     printf("Key pressed, exiting.\n");
+#else
+    /* On ZX, wait for any key (no stdio) */
+    while (!zx_keypressed()) {
+        zx_wait_vsync();
+    }
+#endif
+
     return 0;
 }

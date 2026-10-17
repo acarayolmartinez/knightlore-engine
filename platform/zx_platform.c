@@ -24,14 +24,14 @@ void zx_init(void) {
 }
 
 void zx_wait_vsync(void) {
-#ifdef HOST
-    /* On host, sleep ~16ms to simulate 60Hz frame */
-    #include <unistd.h>
-    usleep(16000);
-#else
+#ifndef HOST
     for (volatile int i = 0; i < 1200; ++i) {
         __asm__("nop");
     }
+#else
+    /* On host, sleep ~16ms to simulate 60Hz frame */
+    #include <unistd.h>
+    usleep(16000);
 #endif
 }
 
@@ -63,13 +63,15 @@ void zx_blit_tile(int px, int py, const uint8_t *tile) {
             uint8_t low = t >> shift;
             uint8_t high = t << (8 - shift);
 
-            uint8_t affected_low = (uint8_t)((1u << (8 - shift)) - 1u); /* bits changed in low byte */
-            uint8_t affected_high = (uint8_t)(((1u << shift) - 1u) << (8 - shift)); /* bits changed in high byte */
+            /* write affected bits preserving surrounding bits */
+            /* low affects bits [0..7-shift] in low byte */
+            uint8_t low_mask = ((1u << (8 - shift)) - 1u);
+            SCREEN[offset] = (SCREEN[offset] & ~low_mask) | (low & low_mask);
 
-            SCREEN[offset] = (SCREEN[offset] & ~affected_low) | (low & affected_low);
-            /* guard against writing past end of a scanline */
+            /* high affects the remaining bits in the next byte */
             if (x_byte + 1 < 32) {
-                SCREEN[offset + 1] = (SCREEN[offset + 1] & ~affected_high) | (high & affected_high);
+                uint8_t high_mask = ~low_mask;
+                SCREEN[offset + 1] = (SCREEN[offset + 1] & ~high_mask) | (high & high_mask);
             }
         }
     }
@@ -84,14 +86,22 @@ void zx_set_attr(int tx, int ty, uint8_t attr) {
 }
 
 #ifndef HOST
+/* ZX (z88dk) key detection using port 0xFE.
+   This is a simple "any key pressed" check. A proper keyboard scanner
+   should poll each row (0xfe with appropriate row mask) and decode keys.
+   Using inp() from z88dk/SDCC runtime. */
+
+extern unsigned char inp(unsigned short);
+
 int zx_keypressed(void) {
-    /* On real ZX this would read keyboard ports; keep stub for portability */
-    return 0;
+    unsigned char v = inp(0xFE);
+    return (v != 0xFF);
 }
 
 uint8_t *zx_screen_ptr(void) {
     return (uint8_t *)SCREEN;
 }
+
 #else
 /* Host-side implementations for development / testing */
 
